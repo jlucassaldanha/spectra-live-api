@@ -15,7 +15,7 @@ class TwitchUser(Base):
     refresh_token = Column("refresh_token", String)
     expire_in = Column("expire_in", Integer)
 
-    user_profile = relationship("TwitchUserProfile", back_populates="twitch_user", uselist=False)
+    user_profile = relationship("TwitchUserProfile", back_populates="user", uselist=False)
 
     def __init__(self, access_token: str, refresh_token: str, expire_in: int):
         self.access_token = access_token
@@ -32,7 +32,7 @@ class TwitchUserProfile(Base):
     email = Column("email", String)
     profile_img_url = Column("profile_img_url", String)
 
-    user = relationship("TwitchUser", back_populates="twitch_user_profile")
+    user = relationship("TwitchUser", back_populates="user_profile")
 
     def __init__(self, id: int, twitch_id: int, login: str, display_name: str, email: str, profile_img_url: str,):
         self.id = id
