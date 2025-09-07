@@ -45,7 +45,7 @@ def callback(request: Request, code: str, error: str = None):
 
 	auth_response = auth_response.json()
 
-	# Colocar em uma rota diferente
+	# Colocar em uma rota diferente, passar a usar rotas protegidas 
 	user_response = requests.get(
 		"https://api.twitch.tv/helix/users",
 		headers={
