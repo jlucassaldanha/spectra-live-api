@@ -3,9 +3,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
 
+from db import init_db
+from models import TwitchUser, TwitchUserProfile
+
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+
+init_db(drop_first=False)
 
 app = FastAPI(
 	title="Spectra Live API",
@@ -23,6 +28,7 @@ app.add_middleware(
 	allow_methods=["*"],
 	allow_headers=["*"]
 )
+
 
 from routes import auth_router
 

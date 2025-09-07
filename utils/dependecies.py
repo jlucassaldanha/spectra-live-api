@@ -1,13 +1,15 @@
 from fastapi import Depends, Request, HTTPException
 from sqlalchemy.orm import sessionmaker, Session
 
-from models import engine, TwitchUser
+from models import TwitchUser
+from db import db_engine
+
+SessionLocal = sessionmaker(bind=db_engine)
 
 def get_session():
 	# Cria a sessão para poder manipular o banco de dados
 	try:
-		Session = sessionmaker(bind=engine)
-		session = Session()
+		session = SessionLocal()
 
 		# "Retorna" a sessão para ser utilizada fora desta função
 		yield session 

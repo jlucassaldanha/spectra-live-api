@@ -1,11 +1,7 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy import Column, Integer, String, ForeignKey
 
-db_url = "sqlite:///banco.db"
-engine = create_engine(db_url)
-
-Base = declarative_base()
+from db import Base
 
 class TwitchUser(Base):
     __tablename__ = "twitch_user"
