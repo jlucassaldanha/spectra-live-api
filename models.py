@@ -1,5 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Column, Integer, String, ForeignKey
 
 db_url = "sqlite:///banco.db"
@@ -7,33 +7,39 @@ engine = create_engine(db_url)
 
 Base = declarative_base()
 
-class User(Base):
-    __tablename__ = "user"
+class TwitchUser(Base):
+    __tablename__ = "twitch_user"
     
     id = Column("id", Integer, primary_key=True, autoincrement=True)
-    twitch_id = Column("twitch_id", Integer, unique=True)
-    username = Column("username", String, unique=True)
-    token = Column("token", String)
+    access_token = Column("access_token", String)
     refresh_token = Column("refresh_token", String)
-    expire_time = Column("expire_time", Integer)
+    expire_in = Column("expire_in", Integer)
 
-    def __init__(self, twitch_id: int, username: str, token: str, refresh_token: str, expire_time: int):
-        self.twitch_id = twitch_id
-        self.username = username
-        self.token = token
+    user_profile = relationship("TwitchUserProfile", back_populates="twitch_user", uselist=False)
+
+    def __init__(self, access_token: str, refresh_token: str, expire_in: int):
+        self.access_token = access_token
         self.refresh_token = refresh_token
-        self.expire_time = expire_time
+        self.expire_in = expire_in
 
-class Blocked(Base):
-    __tablename__ = "blocked"
+class TwitchUserProfile(Base):
+    __tablename__ = "twitch_user_profile"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id = Column("id", ForeignKey("twitch_user.id"), primary_key=True)
     twitch_id = Column("twitch_id", Integer, unique=True)
-    username = Column("username", String)
-    user_id = Column("user_id", Integer, ForeignKey("user.id"))
+    login = Column("login", String)
+    display_name = Column("display_name", String)
+    email = Column("email", String)
+    profile_img_url = Column("profile_img_url", String)
 
-    def __init__(self, twitch_id: int, username: str, user_id: int):
+    user = relationship("TwitchUser", back_populates="twitch_user_profile")
+
+    def __init__(self, id: int, twitch_id: int, login: str, display_name: str, email: str, profile_img_url: str,):
+        self.id = id
         self.twitch_id = twitch_id
-        self.username = username
-        self.user_id = user_id
+        self.login = login
+        self.display_name = display_name
+        self.email = email
+        self.profile_img_url = profile_img_url
+
 
