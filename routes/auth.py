@@ -111,7 +111,7 @@ def me(request: Request, session: Session = Depends(get_session)):
 			user_response["profile_image_url"],
 		)
 		session.add(twitch_user)
-		
+
 	elif twitch_user:
 		twitch_user.access_token = user_tokens["access_token"]
 		twitch_user.refresh_token = user_tokens["refresh_token"]
@@ -125,4 +125,6 @@ def me(request: Request, session: Session = Depends(get_session)):
 		"id":twitch_user.id,
 		"data": twitch_user
 	}
+
+# Adicionar jwt
 
