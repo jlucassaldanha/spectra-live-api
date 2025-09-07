@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timedelta
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, get_user
+from utils import get_session
 
 from sqlalchemy.orm import Session
 from models import User
@@ -111,7 +111,13 @@ def me(request: Request, session: Session = Depends(get_session)):
 			user_response["profile_image_url"],
 		)
 		session.add(twitch_user)
-		session.commit()
+		
+	elif twitch_user:
+		twitch_user.access_token = user_tokens["access_token"]
+		twitch_user.refresh_token = user_tokens["refresh_token"]
+		twitch_user.expires_in = user_tokens["expires_in"]
+	
+	session.commit()
 
 	del sessions[session_token]
 

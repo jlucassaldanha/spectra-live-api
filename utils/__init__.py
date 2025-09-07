@@ -1,1 +1,1 @@
-from .dependecies import get_session, get_user
+from .dependecies import get_session

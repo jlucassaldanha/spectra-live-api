@@ -16,15 +16,3 @@ def get_session():
 	finally: # Ao final da utilização, fecha a sessão
 		session.close()
 
-def get_user(request: Request, session: Session = Depends(get_session)):
-	user_id = request.cookies.get("user_id")
-
-	if not user_id:
-		raise HTTPException(status_code=401, detail="Não autenticado")
-	
-	twitch_user = session.query(User).filter(User.id==user_id).first()
-
-	if not twitch_user:
-		raise HTTPException(status_code=401, detail="Não autenticado")
-	
-	return twitch_user
