@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse
 
 import requests
 import uuid
-from datetime import datetime, timedelta
 
 from main import CLIENT_ID, CLIENT_SECRET
 from utils import get_session
