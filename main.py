@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 from db import init_db
-from models import TwitchUser, TwitchUserProfile
+from models import User
 
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
