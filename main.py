@@ -5,8 +5,7 @@ import os
 
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRETS = os.getenv("CLIENT_SECRETS")
-REDIRECT_URI = "http://localhost:8000/auth/callback"
+CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
 app = FastAPI(
 	title="Spectra Live API",
