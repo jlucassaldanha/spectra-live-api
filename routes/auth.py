@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse, JSONResponse
 
-import requests
+import requests, httpx
 import uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt
+from utils import get_session, create_jwt, decode_jwt, get_current_user
 
 from sqlalchemy.orm import Session
 from models import User
@@ -35,16 +35,18 @@ async def callback(code: str, error: str = None):
 	if error:
 		raise HTTPException(status_code=401, detail="Usuário não autorizado")
 	
-	auth_response = requests.post(
-		"https://id.twitch.tv/oauth2/token",
-		params={
-			"client_id": CLIENT_ID,
-			"client_secret": CLIENT_SECRET,
-			"code": code,
-			"grant_type": "authorization_code",
-			"redirect_uri": REDIRECT_URI
-		}
-	)
+	async with httpx.AsyncClient() as client:
+		auth_response = await client.post(
+			"https://id.twitch.tv/oauth2/token",
+			data={
+				"client_id": CLIENT_ID,
+				"client_secret": CLIENT_SECRET,
+				"code": code,
+				"grant_type": "authorization_code",
+				"redirect_uri": REDIRECT_URI
+			}
+		)
+		#auth_response.raise_for_status()
 
 	if auth_response.status_code != 200:
 		raise HTTPException(status_code=auth_response.status_code, detail="Erro ao obter token")
@@ -81,13 +83,14 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	
 	user_tokens = sessions[session_token]
 
-	user_response = requests.get(
-		"https://api.twitch.tv/helix/users",
-		headers={
-			"Authorization": f"Bearer {user_tokens["access_token"]}",
-			"Client-Id": CLIENT_ID,
-		}
-	)
+	async with httpx.AsyncClient() as client:
+		user_response = await client.get(
+			"https://api.twitch.tv/helix/users",
+			headers={
+				"Authorization": f"Bearer {user_tokens["access_token"]}",
+				"Client-Id": CLIENT_ID,
+			}	
+		)
 
 	#print("USERS DEBUG:", user_response.status_code, user_response.text)
 
@@ -134,22 +137,9 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	return response
 	
 @auth_router.get("/user-info")
-async def user_info(request: Request, session: Session = Depends(get_session)):
-	token = request.cookies.get("auth_token")
-	if not token:
-		raise HTTPException(status_code=401, detail="Não autenticado")
-	
-	payload = decode_jwt(token)
-	if not payload:
-		raise HTTPException(status_code=401, detail="Token invalido")
-	
-	user_id = payload["user_id"]
-
-	user = session.query(User).filter(User.id==user_id).first()
-	if not user:
-		raise HTTPException(status_code=400, detail="usuario não encontrado")
-	
-	return user
-
-	
+async def user_info(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+	return {
+		"login":user.login,
+		"id": user.id
+	}
 

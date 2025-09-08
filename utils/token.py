@@ -4,7 +4,7 @@ from main import SECRET_KEY, ALGORITHM
 from fastapi import Depends, Request, HTTPException
 
 def create_jwt(user_id: int, twitch_id: int):
-	expire = datetime.now() + timedelta(minutes=(60*24*7))
+	expire = datetime.now() + timedelta(days=7)
 
 	token = jwt.encode({
 		"user_id": user_id,
