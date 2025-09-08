@@ -5,7 +5,7 @@ import requests
 import uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt
+from utils import get_session, create_jwt, decode_jwt, get_current_user
 
 from sqlalchemy.orm import Session
 from models import User
@@ -134,22 +134,9 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	return response
 	
 @auth_router.get("/user-info")
-async def user_info(request: Request, session: Session = Depends(get_session)):
-	token = request.cookies.get("auth_token")
-	if not token:
-		raise HTTPException(status_code=401, detail="Não autenticado")
-	
-	payload = decode_jwt(token)
-	if not payload:
-		raise HTTPException(status_code=401, detail="Token invalido")
-	
-	user_id = payload["user_id"]
-
-	user = session.query(User).filter(User.id==user_id).first()
-	if not user:
-		raise HTTPException(status_code=400, detail="usuario não encontrado")
-	
-	return user
-
-	
+async def user_info(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+	return {
+		"login":user.login,
+		"id": user.id
+	}
 
