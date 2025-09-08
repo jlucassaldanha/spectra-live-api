@@ -9,6 +9,8 @@ from models import User
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
+ALGORITHM = os.getenv("ALGORITHM")
+SECRET_KEY = os.getenv("SECRET_KEY")
 
 init_db(drop_first=False)
 

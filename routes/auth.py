@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, JSONResponse
 
 import requests
 import uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session
+from utils import get_session, create_jwt, decode_jwt
 
 from sqlalchemy.orm import Session
 from models import User
@@ -30,7 +30,7 @@ async def login():
 	return RedirectResponse(url)
 
 @auth_router.get("/callback")
-async def callback(code: str, response: Response, error: str = None):
+async def callback(code: str, error: str = None):
 
 	if error:
 		raise HTTPException(status_code=401, detail="Usuário não autorizado")
@@ -72,7 +72,7 @@ async def callback(code: str, response: Response, error: str = None):
 
 
 @auth_router.get("/me")
-def me(request: Request, session: Session = Depends(get_session)):
+async def me(request: Request, session: Session = Depends(get_session)):
 
 	session_token = request.cookies.get("session_token")
 
@@ -120,10 +120,36 @@ def me(request: Request, session: Session = Depends(get_session)):
 
 	del sessions[session_token]
 
-	return {
-		"id":twitch_user.id,
-		"data": twitch_user
-	}
+	jwt = create_jwt(twitch_user.id, twitch_user.twitch_id)
 
-# Adicionar jwt
+	response = JSONResponse({"msg": "Usuario autenticado"})
+	response.set_cookie(
+		key="auth_token",
+		value=jwt,
+		httponly=True,
+		secure=True,
+		samesite="lax"
+	)
+
+	return response
+	
+@auth_router.get("/user-info")
+async def user_info(request: Request, session: Session = Depends(get_session)):
+	token = request.cookies.get("auth_token")
+	if not token:
+		raise HTTPException(status_code=401, detail="Não autenticado")
+	
+	payload = decode_jwt(token)
+	if not payload:
+		raise HTTPException(status_code=401, detail="Token invalido")
+	
+	user_id = payload["user_id"]
+
+	user = session.query(User).filter(User.id==user_id).first()
+	if not user:
+		raise HTTPException(status_code=400, detail="usuario não encontrado")
+	
+	return user
+
+	
 

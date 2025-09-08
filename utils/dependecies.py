@@ -16,3 +16,4 @@ def get_session():
 	finally: # Ao final da utilização, fecha a sessão
 		session.close()
 
+
