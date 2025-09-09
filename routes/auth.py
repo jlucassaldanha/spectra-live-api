@@ -147,9 +147,21 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	)
 
 	return response
-	
+
+@auth_router.post("/logout")
+async def logout():
+	redirect_response = RedirectResponse(url="https://localhost:5173/home")
+	redirect_response.delete_cookie("auth_token")
+	return redirect_response
+
+@auth_router.get("/logout-get")
+async def logout_get():
+	redirect_response = RedirectResponse(url="https://localhost:5173/home")
+	redirect_response.delete_cookie("auth_token")
+	return redirect_response
+
 @auth_router.get("/user-info")
-async def user_info(user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+async def user_info(user: User = Depends(get_current_user)):
 	return {
 		"login":user.login,
 		"id": user.id
