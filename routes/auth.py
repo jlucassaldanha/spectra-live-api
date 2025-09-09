@@ -5,7 +5,7 @@ import requests, httpx
 import uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt, get_current_user
+from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
 from models import User
@@ -91,6 +91,18 @@ async def me(request: Request, session: Session = Depends(get_session)):
 				"Client-Id": CLIENT_ID,
 			}	
 		)
+
+	if user_response.status_code == 401:
+		user_tokens = refresh_twitch_token(user_tokens["refresh_token"])
+
+		async with httpx.AsyncClient() as client:
+			user_response = await client.get(
+				"https://api.twitch.tv/helix/users",
+				headers={
+					"Authorization": f"Bearer {user_tokens["access_token"]}",
+					"Client-Id": CLIENT_ID,
+				}	
+			)
 
 	#print("USERS DEBUG:", user_response.status_code, user_response.text)
 
