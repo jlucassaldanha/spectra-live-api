@@ -23,7 +23,7 @@ async def login():
 		f"?response_type=code"
         f"&client_id={CLIENT_ID}"
         f"&redirect_uri={REDIRECT_URI}"
-        "&scope=user:read:email"
+        "&scope=user:read:email moderation:read"
     )
 	
 	return RedirectResponse(url)
@@ -82,25 +82,21 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	user_tokens = sessions[session_token]
 
 	async with httpx.AsyncClient() as client:
-		user_response = await client.get(
-			"https://api.twitch.tv/helix/users",
-			headers={
-				"Authorization": f"Bearer {user_tokens["access_token"]}",
-				"Client-Id": CLIENT_ID,
-			}	
-		)
-
-	if user_response.status_code == 401:
-		user_tokens = refresh_twitch_token(user_tokens["refresh_token"])
-
-		async with httpx.AsyncClient() as client:
-			user_response = await client.get(
+		async def get_info(token):
+			return await client.get(
 				"https://api.twitch.tv/helix/users",
 				headers={
-					"Authorization": f"Bearer {user_tokens["access_token"]}",
+					"Authorization": f"Bearer {token}",
 					"Client-Id": CLIENT_ID,
 				}	
 			)
+		
+		user_response = await get_info(user_tokens["access_token"])
+
+		if user_response.status_code == 401:
+			user_tokens = await refresh_twitch_token(refresh_token=user_tokens["refresh_token"], session=session)
+			
+			user_response = await get_info(user_tokens["access_token"])
 
 	if user_response.status_code != 200:
 		raise HTTPException(status_code=user_response.status_code, detail="Erro ao obter dados do usuário")

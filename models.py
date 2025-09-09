@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 
 from db import Base
 
-# Passar a usar index=True
+# Passar a usar index=True?
 
 class User(Base):
     __tablename__ = "user"

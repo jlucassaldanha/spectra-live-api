@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 from db import init_db
-from models import User
+from models import User, TwitchUsers, UnviewUsers
 
 load_dotenv()
 CLIENT_ID = os.getenv("CLIENT_ID")
@@ -32,7 +32,8 @@ app.add_middleware(
 )
 
 
-from routes import auth_router, preferences_router
+from routes import auth_router, preferences_router, information_router
 
 app.include_router(auth_router)
 app.include_router(preferences_router)
+app.include_router(information_router)

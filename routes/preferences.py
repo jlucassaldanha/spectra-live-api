@@ -12,4 +12,3 @@ from models import User
 preferences_router = APIRouter(prefix="/preferences", tags=["Preferences"])
 
 # Lista moderadores para poder colocar na lista de fora de vista
-

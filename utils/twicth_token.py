@@ -6,7 +6,7 @@ from main import CLIENT_ID, CLIENT_SECRET
 from models import User
 from .dependecies import get_session
 
-async def refresh_twitch_token(refresh_token: str, user_id: int = None, session: Session = Depends(get_session)):
+async def refresh_twitch_token(refresh_token: str, session: Session, user_id: int = None):
 	async with httpx.AsyncClient() as client:
 		response = await client.post(
 			"https://id.twitch.tv/oauth2/token",
@@ -29,13 +29,14 @@ async def refresh_twitch_token(refresh_token: str, user_id: int = None, session:
 	user = session.query(User).filter(User.id==user_id).first()
 
 	if not user:
-		HTTPException(status_code=404, detail="Usuário não encontrado")
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
 	user.access_token = tokens["access_token"]
 	user.refresh_token = tokens["refresh_token"]
 	user.expires_in = tokens["expires_in"]
 
 	session.commit()
+	session.refresh(user)
 
 	return user
 
@@ -43,7 +44,7 @@ async def refresh_twitch_token_deprecated(user_id: int, session: Session = Depen
 	user = session.query(User).filter(User.id==user_id).first()
 
 	if not user:
-		HTTPException(status_code=404, detail="Usuário não encontrado")
+		raise HTTPException(status_code=404, detail="Usuário não encontrado")
 
 	async with httpx.AsyncClient() as client:
 		response = await client.post(
