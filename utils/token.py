@@ -1,7 +1,7 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from main import SECRET_KEY, ALGORITHM
-from fastapi import Depends, Request, HTTPException
+from fastapi import HTTPException
 
 def create_jwt(user_id: int, twitch_id: int):
 	expire = datetime.now() + timedelta(days=7)
@@ -20,4 +20,3 @@ def decode_jwt(token: str):
 	except JWTError:
 		raise HTTPException(status_code=401, detail="Token não autenticado")
 	
-## Melhorar logica de criação e uso do token

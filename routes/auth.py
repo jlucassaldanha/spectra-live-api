@@ -1,11 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, JSONResponse
 
-import requests, httpx
-import uuid
+import httpx, uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
+from utils import get_session, create_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
 from models import User
@@ -46,7 +45,6 @@ async def callback(code: str, error: str = None):
 				"redirect_uri": REDIRECT_URI
 			}
 		)
-		#auth_response.raise_for_status()
 
 	if auth_response.status_code != 200:
 		raise HTTPException(status_code=auth_response.status_code, detail="Erro ao obter token")
@@ -103,8 +101,6 @@ async def me(request: Request, session: Session = Depends(get_session)):
 					"Client-Id": CLIENT_ID,
 				}	
 			)
-
-	#print("USERS DEBUG:", user_response.status_code, user_response.text)
 
 	if user_response.status_code != 200:
 		raise HTTPException(status_code=user_response.status_code, detail="Erro ao obter dados do usuário")

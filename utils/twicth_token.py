@@ -1,5 +1,5 @@
 import httpx
-from fastapi import Depends, Request, HTTPException
+from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from main import CLIENT_ID, CLIENT_SECRET

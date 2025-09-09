@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 
-from routes import auth_router
+from routes import auth_router, preferences_router
 
 app.include_router(auth_router)
+app.include_router(preferences_router)
