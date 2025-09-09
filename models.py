@@ -3,6 +3,8 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 
 from db import Base
 
+# Passar a usar index=True
+
 class User(Base):
     __tablename__ = "user"
     
@@ -26,19 +28,29 @@ class User(Base):
         self.email = email
         self.profile_image_url = profile_image_url
 
+class TwitchUsers(Base):
+    __tablename__ = "twitch_users"
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    twitch_id = Column("twitch_id", Integer, unique=True)
+    login = Column("login", String)
+    display_name = Column("display_name", String)
+    profile_image_url = Column("profile_image_url", String)
+
+    def __init__(self, twitch_id: int, login: str, display_name: str, profile_image_url: str):
+        self.twitch_id = twitch_id
+        self.login = login
+        self.display_name = display_name
+        self.profile_image_url = profile_image_url
+    
 class UnviewUsers(Base):
     __tablename__ = "unview_users"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     user_id = Column("user_id", ForeignKey("user.id"))
-    twitch_id = Column("twitch_id", Integer)
-    login = Column("login", String)
-    display_name = Column("display_name", String)
-    profile_image_url = Column("profile_image_url", String)
+    twitch_user_id = Column("twitch_user_id", ForeignKey("twitch_users.id"))
 
-    def __init__(self, user_id: int, twitch_id: int, login: str, display_name: str, profile_image_url: str):
+    def __init__(self, user_id: int, twitch_user_id: int):
         self.user_id = user_id
-        self.twitch_id = twitch_id
-        self.login = login
-        self.display_name = display_name
-        self.profile_image_url = profile_image_url
+        self.twitch_user_id = twitch_user_id
+       
