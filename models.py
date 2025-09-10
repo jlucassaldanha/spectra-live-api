@@ -47,10 +47,21 @@ class UnviewUsers(Base):
     __tablename__ = "unview_users"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
-    user_id = Column("user_id", ForeignKey("user.id"))
-    twitch_user_id = Column("twitch_user_id", ForeignKey("twitch_users.id"))
+    channel_id = Column("channel_id", ForeignKey("user.twitch_id"))
+    twitch_user_id = Column("twitch_user_id", ForeignKey("twitch_users.twitch_id"))
 
-    def __init__(self, user_id: int, twitch_user_id: int):
-        self.user_id = user_id
+    def __init__(self, channel_id: int, twitch_user_id: int):
+        self.channel_id = channel_id
         self.twitch_user_id = twitch_user_id
+
+class Moderators(Base):
+    __tablename__ = "moderators"
+
+    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    channel_id = Column("channel_id", ForeignKey("user.twitch_id"))
+    moderator_id = Column("moderator_id", ForeignKey("twitch_users.twitch_id"))
+
+    def __init__(self, channel_id: int, moderator_id: int):
+        self.channel_id = channel_id
+        self.moderator_id = moderator_id
        
