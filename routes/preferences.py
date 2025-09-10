@@ -17,6 +17,12 @@ preferences_router = APIRouter(prefix="/preferences", tags=["Preferences"])
 async def set_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):	
 	users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
 
+	found = {user.twitch_id for user in users}
+	missing = set(twitch_ids.twitch_ids) - found
+
+	if len(missing) > 0:
+		pass # Fazer uma consulta na api para adicionar os usuarios faltantes
+
 	for user in users:
 		unview = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).filter(UnviewUsers.twitch_user_id==user.twitch_id).first()
 		if not unview:
@@ -28,5 +34,5 @@ async def set_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_
 
 	session.commit()
 
-	return {"msg": "ok"}
+	return twitch_ids
 	

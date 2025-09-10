@@ -31,15 +31,15 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 	)
 
 	for mod in mods_info["data"]:
-		user = session.query(TwitchUsers).filter(TwitchUsers.twitch_id==mod["id"]).first()
-		if not user:
-			new_twitch_user = TwitchUsers(
+		twitch_user = session.query(TwitchUsers).filter(TwitchUsers.twitch_id==mod["id"]).first()
+		if not twitch_user:
+			twitch_user = TwitchUsers(
 				mod["id"],
 				mod["login"],
 				mod["display_name"],
 				mod["profile_image_url"]
 			)
-			session.add(new_twitch_user)
+			session.add(twitch_user)
 	
 	session.commit()
 
