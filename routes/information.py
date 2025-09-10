@@ -1,10 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse, JSONResponse
-
-import httpx, uuid
-
-from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token, twitch_get_endpoint
+from fastapi import APIRouter, Depends, HTTPException
+from utils import get_session, get_current_user, twitch_get_endpoint
 
 from sqlalchemy.orm import Session
 from models import User, TwitchUsers

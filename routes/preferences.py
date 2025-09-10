@@ -1,10 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
 
-import httpx, uuid
-
-from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token, twitch_get_endpoint
+from utils import get_session, get_current_user, twitch_get_endpoint
 
 from sqlalchemy.orm import Session
 from models import User, TwitchUsers, UnviewUsers
@@ -12,8 +8,7 @@ from schemas import UserIdSchema
 
 preferences_router = APIRouter(prefix="/preferences", tags=["Preferences"])
 
-# Lista moderadores para poder colocar na lista de fora de vista
-@preferences_router.post("/unview")
+@preferences_router.post("/add/unview")
 async def set_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):	
 	users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
 
@@ -21,7 +16,25 @@ async def set_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_
 	missing = set(twitch_ids.twitch_ids) - found
 
 	if len(missing) > 0:
-		pass # Fazer uma consulta na api para adicionar os usuarios faltantes
+		response = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/users",
+			params={"id":missing}
+		)
+
+		for data in response["data"]:
+			new_twitch_user = TwitchUsers(
+				data["id"],
+				data["login"],
+				data["display_name"],
+				data["profile_image_url"]
+			)
+			session.add(new_twitch_user)
+
+		session.commit()
+
+		users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
 
 	for user in users:
 		unview = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).filter(UnviewUsers.twitch_user_id==user.twitch_id).first()
@@ -31,6 +44,19 @@ async def set_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_
 				twitch_user_id=user.twitch_id
 			)
 			session.add(new_unview)
+
+	session.commit()
+
+	return twitch_ids
+
+@preferences_router.delete("/remove/unview")
+async def remove_unview(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):	
+	users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
+
+	for user in users:
+		unview = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).filter(UnviewUsers.twitch_user_id==user.twitch_id).first()
+		if unview:
+			session.delete(unview)
 
 	session.commit()
 
