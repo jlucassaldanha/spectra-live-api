@@ -95,6 +95,12 @@ async def get_viewers(current_user: User = Depends(get_current_user), session: S
 			})
 
 	return {
-		"chatters": chatters_infos,
-		"moderators": moderators_infos
+		"chatters": {
+			"data": chatters_infos, 
+			"total": len(chatters_infos)
+			},
+		"moderators": {
+			"data": moderators_infos, 
+			"total": len(moderators_infos)
+			}
 	}
