@@ -4,7 +4,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, Response
 import httpx, uuid
 
 from main import CLIENT_ID, CLIENT_SECRET
-from utils import get_session, create_jwt, get_current_user, refresh_twitch_token
+from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
 from models import User
@@ -77,6 +77,27 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	session_token = request.cookies.get("session_token")
 
 	if not session_token or session_token not in sessions:
+		jwt_cookie = request.cookies.get("auth_token")
+
+		if jwt_cookie:
+			user_cookie = decode_jwt(jwt_cookie)
+
+			twitch_user = session.query(User).filter(User.twitch_id==user_cookie["twitch_id"]).first()
+
+			response = JSONResponse({
+				"display_name": twitch_user.display_name,
+				"profile_image_url": twitch_user.profile_image_url
+				})
+			response.set_cookie(
+				key="auth_token",
+				value=jwt_cookie,
+				httponly=True,
+				secure=True,
+				samesite="lax"
+			)
+
+			return response
+
 		raise HTTPException(status_code=401, detail="Não autenticado")
 	
 	user_tokens = sessions[session_token]
@@ -129,7 +150,10 @@ async def me(request: Request, session: Session = Depends(get_session)):
 
 	jwt = create_jwt(twitch_user.id, twitch_user.twitch_id)
 
-	response = JSONResponse({"msg": "Usuario autenticado"})
+	response = JSONResponse({
+		"display_name": user_response["display_name"],
+		"profile_image_url": user_response["profile_image_url"]
+		})
 	response.set_cookie(
 		key="auth_token",
 		value=jwt,

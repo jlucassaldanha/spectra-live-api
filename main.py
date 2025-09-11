@@ -23,8 +23,8 @@ app.add_middleware(
 	CORSMiddleware,
 	allow_origins=[
 		"https://spectralive.vercel.app",
-		"https://localhost:5173",
-		"https://localhost:8000"
+		"http://localhost:5173",
+		"http://localhost:8000"
 		],
 	allow_credentials=True,
 	allow_methods=["*"],
