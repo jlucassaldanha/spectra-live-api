@@ -65,8 +65,8 @@ async def callback(code: str, error: str = None):
 		value=session_token,
 		httponly=True,
 		secure=True,
-		samesite="lax"
-	)
+		samesite="lax",
+		)
 
 	return redirect_response
 
@@ -88,13 +88,6 @@ async def me(request: Request, session: Session = Depends(get_session)):
 				"display_name": twitch_user.display_name,
 				"profile_image_url": twitch_user.profile_image_url
 				})
-			response.set_cookie(
-				key="auth_token",
-				value=jwt_cookie,
-				httponly=True,
-				secure=True,
-				samesite="lax"
-			)
 
 			return response
 
@@ -146,8 +139,6 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	
 	session.commit()
 
-	del sessions[session_token]
-
 	jwt = create_jwt(twitch_user.id, twitch_user.twitch_id)
 
 	response = JSONResponse({
@@ -159,13 +150,27 @@ async def me(request: Request, session: Session = Depends(get_session)):
 		value=jwt,
 		httponly=True,
 		secure=True,
-		samesite="lax"
-	)
+		samesite="lax",
+		)
+
+	del sessions[session_token]
 
 	return response
 
 @auth_router.post("/logout")
 async def logout(response: Response):
-	response.delete_cookie("auth_token")
-	return {"msg": "usuário deslogado"}
+	response.delete_cookie(
+		key="session_token", 
+		httponly=True,
+		secure=True,
+		samesite="lax",
+		)
+	response.delete_cookie(
+		key="auth_token", 
+		httponly=True,
+		secure=True,
+		samesite="lax",
+		)
+	
+	return {"msg": "ok"}
 
