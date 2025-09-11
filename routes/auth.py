@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.responses import RedirectResponse, JSONResponse, Response
 
 import httpx, uuid
 
@@ -59,7 +59,7 @@ async def callback(code: str, error: str = None):
 		"expires_in": auth_response["expires_in"]
 	}
 
-	redirect_response = RedirectResponse(url="https://localhost:5173/dashboard")
+	redirect_response = RedirectResponse(url="http://localhost:5173/dashboard")
 	redirect_response.set_cookie(
 		key="session_token",
 		value=session_token,
@@ -141,8 +141,7 @@ async def me(request: Request, session: Session = Depends(get_session)):
 	return response
 
 @auth_router.post("/logout")
-async def logout():
-	redirect_response = RedirectResponse(url="https://localhost:5173/home")
-	redirect_response.delete_cookie("auth_token")
-	return redirect_response
+async def logout(response: Response):
+	response.delete_cookie("auth_token")
+	return {"msg": "usuário deslogado"}
 
