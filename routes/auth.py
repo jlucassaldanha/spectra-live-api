@@ -23,7 +23,7 @@ async def login():
 		f"?response_type=code"
         f"&client_id={CLIENT_ID}"
         f"&redirect_uri={REDIRECT_URI}"
-        "&scope=user:read:email moderation:read"
+        "&scope=user:read:email moderation:read moderator:read:chatters"
     )
 	
 	return RedirectResponse(url)
