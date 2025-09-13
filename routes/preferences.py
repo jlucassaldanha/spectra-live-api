@@ -61,4 +61,9 @@ async def remove_unview(twitch_ids: UserIdSchema, current_user: User = Depends(g
 	session.commit()
 
 	return twitch_ids
-	
+
+@preferences_router.get("/list/unview")
+async def get_unview(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+	unviews = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).all()
+
+	return unviews
