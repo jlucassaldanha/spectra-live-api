@@ -1,10 +1,16 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
+import os
 
-db_engine = create_engine(
-	"sqlite:///banco.db", 
-	connect_args={"check_same_thread": False}
-	)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///banco.db")
+
+if DATABASE_URL.startswith("sqlite"):
+	db_engine = create_engine(
+		DATABASE_URL, 
+		connect_args={"check_same_thread": False}
+		)
+else:
+	db_engine = create_engine(DATABASE_URL)
 
 Base = declarative_base()
 

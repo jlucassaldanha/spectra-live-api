@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
+from contextlib import asynccontextmanager
 
 from db import init_db
 from models import User, TwitchUsers, UnviewUsers
@@ -12,7 +13,12 @@ CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 ALGORITHM = os.getenv("ALGORITHM")
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-init_db(drop_first=False)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+	init_db(drop_first=False)
+	yield
 
 app = FastAPI(
 	title="Spectra Live API",
@@ -23,8 +29,7 @@ app.add_middleware(
 	CORSMiddleware,
 	allow_origins=[
 		"https://spectralive.vercel.app",
-		"http://localhost:5173",
-		"http://localhost:8000"
+		"http://localhost:5173"
 		],
 	allow_credentials=True,
 	allow_methods=["*"],
