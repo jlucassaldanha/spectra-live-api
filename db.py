@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 import os
 
-DATABASE_URL = os.getenv("DATABASE_INTERNAL_URL") or os.getenv("DATABASE_URL") or "sqlite:///./banco.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///banco.db")
 
 if DATABASE_URL.startswith("sqlite"):
 	db_engine = create_engine(
