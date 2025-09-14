@@ -64,7 +64,7 @@ async def callback(code: str, error: str = None):
 		value=session_token,
 		httponly=True,
 		secure=True,
-		samesite="lax",
+		samesite="none",
 		)
 
 	return redirect_response
@@ -149,7 +149,7 @@ async def me(request: Request, session: Session = Depends(get_session)):
 		value=jwt,
 		httponly=True,
 		secure=True,
-		samesite="lax",
+		samesite="none",
 		)
 
 	del sessions[session_token]
@@ -162,13 +162,13 @@ async def logout(response: Response):
 		key="session_token", 
 		httponly=True,
 		secure=True,
-		samesite="lax",
+		samesite="none",
 		)
 	response.delete_cookie(
 		key="auth_token", 
 		httponly=True,
 		secure=True,
-		samesite="lax",
+		samesite="none",
 		)
 	
 	return {"msg": "ok"}
