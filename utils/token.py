@@ -1,6 +1,6 @@
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
-from main import SECRET_KEY, ALGORITHM
+from config import SECRET_KEY, ALGORITHM
 from fastapi import HTTPException
 
 def create_jwt(user_id: int, twitch_id: int):

@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse, JSONResponse, Response
 
 import httpx, uuid
 
-from main import CLIENT_ID, CLIENT_SECRET
+from config import CLIENT_ID, CLIENT_SECRET
 from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session

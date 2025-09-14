@@ -2,7 +2,7 @@ import httpx
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from main import CLIENT_ID, CLIENT_SECRET
+from config import CLIENT_ID, CLIENT_SECRET
 from models import User
 
 async def refresh_twitch_token(refresh_token: str, session: Session, user_id: int = None):
