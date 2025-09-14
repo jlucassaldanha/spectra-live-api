@@ -140,13 +140,13 @@ async def get_viewers(current_user: User = Depends(get_current_user), session: S
 	for user in users["data"]:
 		if user["id"] in moderators_ids:
 			moderators_infos.append({
-				"user_id": user["id"],
+				"twitch_id": user["id"],
 				"display_name": user["display_name"],
 				"profile_image_url": user["profile_image_url"]
 			})
 		else:
 			chatters_infos.append({
-				"user_id": user["id"],
+				"twitch_id": user["id"],
 				"display_name": user["display_name"],
 				"profile_image_url": user["profile_image_url"]
 			})
