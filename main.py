@@ -5,10 +5,7 @@ from contextlib import asynccontextmanager
 from db import init_db
 from models import User, TwitchUsers, UnviewUsers
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-	init_db(drop_first=False)
-	yield
+init_db(drop_first=False)
 
 app = FastAPI(
 	title="Spectra Live API",
