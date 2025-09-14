@@ -3,14 +3,13 @@ from fastapi.responses import RedirectResponse, JSONResponse, Response
 
 import httpx, uuid
 
-from config import CLIENT_ID, CLIENT_SECRET
+from config import CLIENT_ID, CLIENT_SECRET, API_URL, FRONTEND_URL
 from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
 from models import User
 
-REDIRECT_URI = "http://localhost:8000/auth/callback"
-#REDIRECT_URI = "https://spectralive.vercel.app/auth/callback"
+REDIRECT_URI = API_URL + "/auth/callback"
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -59,7 +58,7 @@ async def callback(code: str, error: str = None):
 		"expires_in": auth_response["expires_in"]
 	}
 
-	redirect_response = RedirectResponse(url="http://localhost:5173/dashboard")
+	redirect_response = RedirectResponse(url=FRONTEND_URL + "/dashboard")
 	redirect_response.set_cookie(
 		key="session_token",
 		value=session_token,
