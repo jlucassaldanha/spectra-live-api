@@ -7,6 +7,7 @@
 O **Spectra Live API** é a RestAPI para o **[Spectra Live](https://spectralive.vercel.app)**.
 
 **👉 Acesse a API em produção por aqui: [Spectra Live API](https://spectra-api.onrender.com/redoc)**
+**👉 Acesse o site em produção por aqui: [Spectra Live](https://spectralive.vercel.app)**
 
 ## 🛠 Tecnologias Utilizadas
 - **API** → Python, FastAPI
