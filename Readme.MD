@@ -1,4 +1,5 @@
 # 🎥 Spectra Live API
+![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-000?logo=Railway)
 ![Python](https://shields.io/badge/Python-gray?logo=python)
 ![FastAPI](https://img.shields.io/badge/FastAPI-gray?logo=fastapi)
 ![PostgresSQL](https://img.shields.io/badge/PostgreSQL-gray?logo=postgresql)
@@ -6,13 +7,13 @@
 ## 📌 Sobre o projeto
 O **Spectra Live API** é a RestAPI para o **[Spectra Live](https://spectralive.vercel.app)**.
 
-**👉 Acesse a API em produção por aqui: [Spectra Live API](https://spectra-api.onrender.com/redoc)**
+**👉 Acesse a API em produção por aqui: [Spectra Live API](https://spectralive-api.up.railway.app/redoc)**
 **👉 Acesse o site em produção por aqui: [Spectra Live](https://spectralive.vercel.app)**
 
 ## 🛠 Tecnologias Utilizadas
 - **API** → Python, FastAPI
 - **DB** → PostgreSQL, SQLAlchemy  
-- **Deploy e CI/CD simplificados** → Render
+- **Deploy e CI/CD simplificados** → Railway
 
 ## 🎯 Funcionalidades
 - Login e Logout → Autenticação via conta da Twitch e JWT próprio
@@ -73,8 +74,8 @@ npm run dev
 - Copie seu **Segredos**
 
 ## 📂 Repositórios
-- **Backend**: github.com/jlucassaldanha/spectra-live-api
-- **Frontend**: github.com/jlucassaldanha/spectra-live
+- **Backend**: [github.com/jlucassaldanha/spectra-live-api](github.com/jlucassaldanha/spectra-live-api)
+- **Frontend**: [github.com/jlucassaldanha/spectra-live](github.com/jlucassaldanha/spectra-live)
 
 ## 📫 Contato
 [LinkedIn: João Lucas Saldanha](https://www.linkedin.com/in/joao-lucas-saldanha/)
