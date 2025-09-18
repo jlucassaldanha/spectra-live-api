@@ -54,8 +54,12 @@ async def get_user(display_name: str, current_user: User = Depends(get_current_u
 			endpoint="https://api.twitch.tv/helix/users",
 			params={"login": display_name}
 		)
-
+		
+		if len(user["data"]) < 1:
+			raise HTTPException(status_code=404, detail="User not found")
+		
 		user = user["data"][0]
+		
 		twitch_user = TwitchUsers(
 				user["id"],
 				user["login"],
