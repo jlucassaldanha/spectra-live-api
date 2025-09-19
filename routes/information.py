@@ -45,20 +45,22 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 
 @information_router.get("/user")
 async def get_user(display_name: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-	user = session.query(TwitchUsers).filter(TwitchUsers.display_name == display_name).first()
+	login = display_name.lower()
+	user = session.query(TwitchUsers).filter(TwitchUsers.login == login).first()
 
 	if not user:
 		user = await twitch_get_endpoint(
 			current_user=current_user,
 			session=session,
 			endpoint="https://api.twitch.tv/helix/users",
-			params={"login": display_name}
+			params={"login": login}
 		)
 		
 		if len(user["data"]) < 1:
 			raise HTTPException(status_code=404, detail="User not found")
 		
 		user = user["data"][0]
+		print(user)
 		
 		twitch_user = TwitchUsers(
 				user["id"],
@@ -69,7 +71,7 @@ async def get_user(display_name: str, current_user: User = Depends(get_current_u
 		session.add(twitch_user)
 		session.commit()
 
-		user = session.query(TwitchUsers).filter(TwitchUsers.display_name == display_name).first()
+		user = session.query(TwitchUsers).filter(TwitchUsers.login == login).first()
 
 	return user
 
