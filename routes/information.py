@@ -129,40 +129,63 @@ async def get_viewers(current_user: User = Depends(get_current_user), session: S
 	unview_users = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).all()
 	unview_ids = [str(unview.twitch_user_id) for unview in unview_users]
 
-	chatters = await twitch_get_endpoint(
-		current_user=current_user,
-		session=session,
-		endpoint="https://api.twitch.tv/helix/chat/chatters",
-		params={
-			"broadcaster_id": current_user.twitch_id, 
-			"moderator_id": current_user.twitch_id
-			}
-	)
-
 	chatters_ids = []
-	for chatter in chatters["data"]:
-		if not chatter["user_id"] in unview_ids and chatter["user_id"] != str(current_user.twitch_id):
-			chatters_ids.append(chatter["user_id"])
+	cursor = True
+	while cursor:
+		params = {
+			"broadcaster_id": current_user.twitch_id, 
+			"moderator_id": current_user.twitch_id,
+			"first": 1000
+		}
 
-	users = await twitch_get_endpoint(
-		current_user=current_user,
-		session=session,
-		endpoint="https://api.twitch.tv/helix/users",
-		params={"id":chatters_ids}
-	)
+		if isinstance(cursor, str):
+			params["after"] = cursor
 
-	moderators = await twitch_get_endpoint(
-		current_user=current_user,
-		session=session,
-		endpoint="https://api.twitch.tv/helix/moderation/moderators",
-		params={"broadcaster_id": current_user.twitch_id, "user_id": chatters_ids}
-	)
+		chatters = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/chat/chatters",
+			params=params
+		)
 
-	moderators_ids = [moderator["user_id"] for moderator in moderators["data"]]
+		cursor = dict(chatter["pagination"]).get("cursor", False)
+	
+		for chatter in chatters["data"]:
+			if not chatter["user_id"] in unview_ids: 
+				if chatter["user_id"] != str(current_user.twitch_id):
+					chatters_ids.append(chatter["user_id"])
+
+	users = []
+	moderators_ids = []
+	
+	for i in range(0, len(chatters_ids), 100):
+		ids = chatters_ids[i:i + 100]
+
+		users_response = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/users",
+			params={"id":ids}
+		)
+
+		users += users_response["data"]
+
+		moderators = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/moderation/moderators",
+			params = {
+				"broadcaster_id": current_user.twitch_id, 
+				"user_id": ids,
+				"first": 100
+			}
+		)
+
+		moderators_ids += [moderator["user_id"] for moderator in moderators["data"]]
 
 	moderators_infos = []
 	chatters_infos = []
-	for user in users["data"]:
+	for user in users:
 		if user["id"] in moderators_ids:
 			moderators_infos.append({
 				"twitch_id": user["id"],
