@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from utils import get_session, get_current_user, twitch_get_endpoint
 
 from sqlalchemy.orm import Session
-from models import User, TwitchUsers, UnviewUsers
+from models import User, UnviewUsers
 from schemas import UserIdSchema
 
 information_router = APIRouter(prefix="/information", tags=["Information"])
@@ -22,17 +22,17 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 		if isinstance(cursor, str):
 			params["after"] = cursor
 
-		mods = await twitch_get_endpoint(
+		response = await twitch_get_endpoint(
 			current_user=current_user,
 			session=session,
 			endpoint="https://api.twitch.tv/helix/moderation/moderators",
 			params=params
 		)
 
-		mods_ids = [mod["user_id"] for mod in mods["data"]]
+		mods_ids = [mod["user_id"] for mod in response["data"]]
 		all_mods_ids += mods_ids
 
-		cursor = dict(mods["pagination"]).get("cursor", False)
+		cursor = dict(response["pagination"]).get("cursor", False)
 
 		if len(mods_ids) > 0:
 			mods_info = await twitch_get_endpoint(
@@ -44,85 +44,65 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 
 			mods_info_data += mods_info["data"]
 
+	moderators = []
 	for mod in mods_info_data:
-		twitch_user = session.query(TwitchUsers).filter(TwitchUsers.twitch_id==mod["id"]).first()
-		if not twitch_user:
-			twitch_user = TwitchUsers(
-				mod["id"],
-				mod["login"],
-				mod["display_name"],
-				mod["profile_image_url"]
-			)
-			session.add(twitch_user)
-	session.commit()
-
-	moderators = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(all_mods_ids)).all()
+		moderators.append({
+			"twitch_id": mod["id"],
+			"display_name": mod["display_name"],
+			"profile_image_url": mod["profile_image_url"]
+		})
 
 	return moderators
 
 @information_router.get("/user")
 async def get_user(display_name: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
 	login = display_name.lower()
-	user = session.query(TwitchUsers).filter(TwitchUsers.login == login).first()
+	
+	response = await twitch_get_endpoint(
+		current_user=current_user,
+		session=session,
+		endpoint="https://api.twitch.tv/helix/users",
+		params={"login": login}
+	)
+	
+	data = response["data"]
 
-	if not user:
-		user = await twitch_get_endpoint(
-			current_user=current_user,
-			session=session,
-			endpoint="https://api.twitch.tv/helix/users",
-			params={"login": login}
-		)
-		
-		if len(user["data"]) < 1:
-			raise HTTPException(status_code=404, detail="User not found")
-		
-		user = user["data"][0]
-		print(user)
-		
-		twitch_user = TwitchUsers(
-				user["id"],
-				user["login"],
-				user["display_name"],
-				user["profile_image_url"]
-			)
-		session.add(twitch_user)
-		session.commit()
+	if len(data) < 1:
+		raise HTTPException(status_code=404, detail="User not found")
+	
+	data = data[0]
 
-		user = session.query(TwitchUsers).filter(TwitchUsers.login == login).first()
-
-	return user
+	twitch_user = {
+		"twitch_id": data["id"],
+		"display_name": data["display_name"],
+		"profile_image_url": data["profile_image_url"]
+	}
+	
+	return twitch_user
 
 @information_router.post("/users")
 async def get_users(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-	users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
-
-	found = {user.twitch_id for user in users}
-	missing = list(set(twitch_ids.twitch_ids) - found)
 	
-	if len(missing) > 0:
-		for i in range(0, len(missing), 100):
-			ids = missing[i:i + 100]
-			print(ids)
-			response = await twitch_get_endpoint(
-				current_user=current_user,
-				session=session,
-				endpoint="https://api.twitch.tv/helix/users",
-				params={"id":ids}
-			)
+	twitch_users = []
+	
+	for i in range(0, len(twitch_ids.twitch_ids), 100):
+		ids = twitch_ids.twitch_ids[i:i + 100]
+		
+		response = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/users",
+			params={"id":ids}
+		)
 
-			for data in response["data"]:
-				new_twitch_user = TwitchUsers(
-					data["id"],
-					data["login"],
-					data["display_name"],
-					data["profile_image_url"]
-				)
-				session.add(new_twitch_user)
-		session.commit()
+		for data in response["data"]:
+			twitch_users.append({
+				"twitch_id": data["id"],
+				"display_name": data["display_name"],
+				"profile_image_url": data["profile_image_url"]
+			})
 
-		users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
-
-	return users
+	return twitch_users
 
 @information_router.get("/viewers")
 async def get_viewers(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
