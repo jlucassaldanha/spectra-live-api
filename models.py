@@ -30,7 +30,7 @@ class UnviewUsers(Base):
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     channel_id = Column("channel_id", ForeignKey("user.twitch_id"))
-    twitch_user_id = Column("twitch_user_id", ForeignKey("twitch_users.twitch_id"))
+    twitch_user_id = Column("twitch_user_id", Integer)
 
     def __init__(self, channel_id: int, twitch_user_id: int):
         self.channel_id = channel_id
