@@ -9,24 +9,42 @@ information_router = APIRouter(prefix="/information", tags=["Information"])
 
 @information_router.get("/mods")
 async def get_moderators(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-	
-	mods = await twitch_get_endpoint(
-		current_user=current_user,
-		session=session,
-		endpoint="https://api.twitch.tv/helix/moderation/moderators",
-		params={"broadcaster_id": current_user.twitch_id}
-	)
+	mods_info_data = []
+	all_mods_ids = []
 
-	mods_ids = [mod["user_id"] for mod in mods["data"]]
+	cursor = True
+	while cursor:
+		params = {
+			"broadcaster_id": current_user.twitch_id,
+			"first": 100
+		}
 
-	mods_info = await twitch_get_endpoint(
-		current_user=current_user,
-		session=session,
-		endpoint="https://api.twitch.tv/helix/users",
-		params={"id":mods_ids}
-	)
+		if isinstance(cursor, str):
+			params["after"] = cursor
 
-	for mod in mods_info["data"]:
+		mods = await twitch_get_endpoint(
+			current_user=current_user,
+			session=session,
+			endpoint="https://api.twitch.tv/helix/moderation/moderators",
+			params=params
+		)
+
+		mods_ids = [mod["user_id"] for mod in mods["data"]]
+		all_mods_ids += mods_ids
+
+		cursor = dict(mods["pagination"]).get("cursor", False)
+
+		if len(mods_ids) > 0:
+			mods_info = await twitch_get_endpoint(
+				current_user=current_user,
+				session=session,
+				endpoint="https://api.twitch.tv/helix/users",
+				params={"id":mods_ids}
+			)
+
+			mods_info_data += mods_info["data"]
+
+	for mod in mods_info_data:
 		twitch_user = session.query(TwitchUsers).filter(TwitchUsers.twitch_id==mod["id"]).first()
 		if not twitch_user:
 			twitch_user = TwitchUsers(
@@ -36,10 +54,9 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 				mod["profile_image_url"]
 			)
 			session.add(twitch_user)
-	
 	session.commit()
 
-	moderators = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(mods_ids)).all()
+	moderators = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(all_mods_ids)).all()
 
 	return moderators
 

@@ -1,5 +1,6 @@
 Tratamento erro para usuário não encontrado rota get_user - Feito
 Tratamento erro 500 rota get_user - Feito
 Mudar get_users para post e pegar mais de 100 usuarios - Feito
+Pagination para get_moderator - Feito 
 
-Tratamento para usuários não encontrados na rota get_users?
+Pagination para get_viewers
