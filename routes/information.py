@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from utils import get_session, get_current_user, twitch_get_endpoint
 
 from sqlalchemy.orm import Session
-from models import User, TwitchUsers, UnviewUsers
+from models import User, UnviewUsers
 from schemas import UserIdSchema
 
 information_router = APIRouter(prefix="/information", tags=["Information"])

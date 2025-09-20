@@ -7,7 +7,7 @@ from config import CLIENT_ID, CLIENT_SECRET, API_URL, FRONTEND_URL
 from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
-from models import User, UnviewUsers
+from models import User
 
 REDIRECT_URI = API_URL + "/auth/callback"
 

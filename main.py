@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from db import init_db
-from models import User, TwitchUsers, UnviewUsers
+from models import User, UnviewUsers
 
 init_db(drop_first=False)
 
