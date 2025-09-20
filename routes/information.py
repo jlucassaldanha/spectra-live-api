@@ -75,30 +75,32 @@ async def get_user(display_name: str, current_user: User = Depends(get_current_u
 
 	return user
 
-@information_router.get("/users")
-async def get_users(twitch_ids: UserIdSchema = Query(...), current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+@information_router.post("/users")
+async def get_users(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
 	users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
 
 	found = {user.twitch_id for user in users}
-	missing = set(twitch_ids.twitch_ids) - found
-
+	missing = list(set(twitch_ids.twitch_ids) - found)
+	
 	if len(missing) > 0:
-		response = await twitch_get_endpoint(
-			current_user=current_user,
-			session=session,
-			endpoint="https://api.twitch.tv/helix/users",
-			params={"id":missing}
-		)
-
-		for data in response["data"]:
-			new_twitch_user = TwitchUsers(
-				data["id"],
-				data["login"],
-				data["display_name"],
-				data["profile_image_url"]
+		for i in range(0, len(missing), 100):
+			ids = missing[i:i + 100]
+			print(ids)
+			response = await twitch_get_endpoint(
+				current_user=current_user,
+				session=session,
+				endpoint="https://api.twitch.tv/helix/users",
+				params={"id":ids}
 			)
-			session.add(new_twitch_user)
 
+			for data in response["data"]:
+				new_twitch_user = TwitchUsers(
+					data["id"],
+					data["login"],
+					data["display_name"],
+					data["profile_image_url"]
+				)
+				session.add(new_twitch_user)
 		session.commit()
 
 		users = session.query(TwitchUsers).filter(TwitchUsers.twitch_id.in_(twitch_ids.twitch_ids)).all()
