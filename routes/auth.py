@@ -7,7 +7,7 @@ from config import CLIENT_ID, CLIENT_SECRET, API_URL, FRONTEND_URL
 from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
 
 from sqlalchemy.orm import Session
-from models import User
+from models import User, UnviewUsers
 
 REDIRECT_URI = API_URL + "/auth/callback"
 
@@ -144,6 +144,7 @@ async def me(request: Request, session: Session = Depends(get_session)):
 		"display_name": user_response["display_name"],
 		"profile_image_url": user_response["profile_image_url"]
 		})
+	
 	response.set_cookie(
 		key="auth_token",
 		value=jwt,

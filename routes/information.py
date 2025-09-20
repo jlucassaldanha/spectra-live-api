@@ -148,7 +148,7 @@ async def get_viewers(current_user: User = Depends(get_current_user), session: S
 			params=params
 		)
 
-		cursor = dict(chatter["pagination"]).get("cursor", False)
+		cursor = dict(chatters["pagination"]).get("cursor", False)
 	
 		for chatter in chatters["data"]:
 			if not chatter["user_id"] in unview_ids: 
