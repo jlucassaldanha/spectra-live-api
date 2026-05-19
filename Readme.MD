@@ -15,11 +15,6 @@ O **Spectra Live API** é a RestAPI para o **[Spectra Live](https://spectralive.
 - **DB** → PostgreSQL, SQLAlchemy  
 - **Deploy e CI/CD simplificados** → Railway
 
-## 🎯 Funcionalidades
-- Login e Logout → Autenticação via conta da Twitch e JWT próprio
-- Requests com API da Twitch
-- Comunicação com banco de dados PostgresSQL
-
 ## 🔧 Como rodar localmente
 ### Backend
 Para rodar com API local
