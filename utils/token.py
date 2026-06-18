@@ -1,3 +1,4 @@
+# FEITO
 from jose import jwt, JWTError
 from datetime import datetime, timedelta
 from config import SECRET_KEY, ALGORITHM
