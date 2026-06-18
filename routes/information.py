@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
-from utils import get_session, get_current_user, twitch_get_endpoint
+from fastapi import APIRouter, Depends, HTTPException
+from utils import get_session, get_current_authenticated_user, twitch_get_endpoint
 
 from sqlalchemy.orm import Session
 from models import User, UnviewUsers
@@ -8,7 +8,7 @@ from schemas import UserIdSchema
 information_router = APIRouter(prefix="/information", tags=["Information"])
 
 @information_router.get("/mods")
-async def get_moderators(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+async def get_moderators(current_user: User = Depends(get_current_authenticated_user), session: Session = Depends(get_session)):
 	mods_info_data = []
 	all_mods_ids = []
 
@@ -55,7 +55,7 @@ async def get_moderators(current_user: User = Depends(get_current_user), session
 	return moderators
 
 @information_router.get("/user")
-async def get_user(display_name: str, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+async def get_user(display_name: str, current_user: User = Depends(get_current_authenticated_user), session: Session = Depends(get_session)):
 	login = display_name.lower()
 	
 	response = await twitch_get_endpoint(
@@ -81,7 +81,7 @@ async def get_user(display_name: str, current_user: User = Depends(get_current_u
 	return twitch_user
 
 @information_router.post("/users")
-async def get_users(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+async def get_users(twitch_ids: UserIdSchema, current_user: User = Depends(get_current_authenticated_user), session: Session = Depends(get_session)):
 	
 	twitch_users = []
 	
@@ -105,7 +105,7 @@ async def get_users(twitch_ids: UserIdSchema, current_user: User = Depends(get_c
 	return twitch_users
 
 @information_router.get("/viewers")
-async def get_viewers(current_user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+async def get_viewers(current_user: User = Depends(get_current_authenticated_user), session: Session = Depends(get_session)):
 	unview_users = session.query(UnviewUsers).filter(UnviewUsers.channel_id==current_user.twitch_id).all()
 	unview_ids = [str(unview.twitch_user_id) for unview in unview_users]
 
