@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import RedirectResponse, JSONResponse, Response
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import RedirectResponse, JSONResponse
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-import httpx, uuid
-
+import httpx
 from config import CLIENT_ID, CLIENT_SECRET, API_URL, FRONTEND_URL
-from utils import get_session, create_jwt, decode_jwt, get_current_user, refresh_twitch_token
+from utils import get_session, create_jwt, decode_jwt
 
 from sqlalchemy.orm import Session
 from models import User
@@ -12,6 +12,8 @@ from models import User
 REDIRECT_URI = API_URL + "/auth/callback"
 
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
+
+security = HTTPBearer()
 
 sessions = {}
 
@@ -28,7 +30,7 @@ async def login():
 	return RedirectResponse(url)
 
 @auth_router.get("/callback")
-async def callback(code: str, error: str = None):
+async def callback(code: str, session: Session = Depends(get_session), error: str = None):
 
 	if error:
 		raise HTTPException(status_code=401, detail="Usuário não autorizado")
@@ -45,132 +47,74 @@ async def callback(code: str, error: str = None):
 			}
 		)
 
-	if auth_response.status_code != 200:
-		raise HTTPException(status_code=auth_response.status_code, detail="Erro ao obter token")
+		if auth_response.status_code != 200:
+			raise HTTPException(status_code=auth_response.status_code, detail="Erro ao obter token")
 
-	auth_response = auth_response.json()
+		auth_data = auth_response.json()
 
-	session_token = str(uuid.uuid4())
-
-	sessions[session_token] = {
-		"access_token": auth_response["access_token"],
-		"refresh_token": auth_response["refresh_token"],
-		"expires_in": auth_response["expires_in"]
-	}
-
-	redirect_response = RedirectResponse(url=FRONTEND_URL + "/dashboard")
-	redirect_response.set_cookie(
-		key="session_token",
-		value=session_token,
-		httponly=True,
-		secure=True,
-		samesite="none",
+		user_response = await client.get(
+			"https://api.twitch.tv/helix/users",
+				headers={
+					"Authorization": f"Bearer {auth_data['access_token']}",
+					"Client-Id": CLIENT_ID,
+				}
 		)
 
-	return redirect_response
+		if user_response.status_code != 200:
+			raise HTTPException(status_code=user_response.status_code, detail="Erro ao obter dados do usuário na Twitch")
+		
+		twitch_user_data = user_response.json()["data"][0]
+	
+	db_user = session.query(User).filter(User.twitch_id == twitch_user_data["id"]).first()
+	
+	if not db_user:
+		db_user = User(
+            access_token=auth_data["access_token"],
+            refresh_token=auth_data["refresh_token"],
+            expires_in=auth_data["expires_in"],
+            twitch_id=twitch_user_data["id"],
+            login=twitch_user_data["login"],
+            display_name=twitch_user_data["display_name"],
+            email=twitch_user_data["email"],
+            profile_image_url=twitch_user_data["profile_image_url"],
+        )
+		session.add(db_user)
+	else:
+		db_user.access_token = auth_data["access_token"]
+		db_user.refresh_token = auth_data["refresh_token"]
+		db_user.expires_in = auth_data["expires_in"]
+		db_user.display_name = twitch_user_data["display_name"]
+		db_user.profile_image_url = twitch_user_data["profile_image_url"]
+		
+	session.commit()
+	
+	jwt_token = create_jwt(db_user.id, db_user.twitch_id)
+	
+	return RedirectResponse(url=f"{FRONTEND_URL}/login/success?token={jwt_token}")
 
 
 @auth_router.get("/me")
-async def me(request: Request, session: Session = Depends(get_session)):
+async def me(credentials: HTTPAuthorizationCredentials = Depends(security), session: Session = Depends(get_session)):
 
-	session_token = request.cookies.get("session_token")
-
-	if not session_token or session_token not in sessions:
-		jwt_cookie = request.cookies.get("auth_token")
-
-		if jwt_cookie:
-			user_cookie = decode_jwt(jwt_cookie)
-
-			twitch_user = session.query(User).filter(User.twitch_id==user_cookie["twitch_id"]).first()
-
-			response = JSONResponse({
-				"display_name": twitch_user.display_name,
-				"profile_image_url": twitch_user.profile_image_url
-				})
-
-			return response
-
-		raise HTTPException(status_code=401, detail="Não autenticado")
+	token = credentials.credentials
 	
-	user_tokens = sessions[session_token]
-
-	async with httpx.AsyncClient() as client:
-		async def get_info(token):
-			return await client.get(
-				"https://api.twitch.tv/helix/users",
-				headers={
-					"Authorization": f"Bearer {token}",
-					"Client-Id": CLIENT_ID,
-				}	
-			)
-		
-		user_response = await get_info(user_tokens["access_token"])
-
-		if user_response.status_code == 401:
-			user_tokens = await refresh_twitch_token(refresh_token=user_tokens["refresh_token"], session=session)
-			
-			user_response = await get_info(user_tokens["access_token"])
-
-	if user_response.status_code != 200:
-		raise HTTPException(status_code=user_response.status_code, detail="Erro ao obter dados do usuário")
+	try:
+		user_data = decode_jwt(token)
+	except Exception:
+		raise HTTPException(status_code=401, detail="Token inválido ou expirado")
 	
-	user_response = user_response.json()["data"][0]
-
-	twitch_user = session.query(User).filter(User.twitch_id==user_response["id"]).first()
-
-	if not twitch_user:
-		twitch_user = User(
-			user_tokens["access_token"],
-			user_tokens["refresh_token"],
-			user_tokens["expires_in"],
-			user_response["id"],
-			user_response["login"],
-			user_response["display_name"],
-			user_response["email"],
-			user_response["profile_image_url"],
-		)
-		session.add(twitch_user)
-
-	elif twitch_user:
-		twitch_user.access_token = user_tokens["access_token"]
-		twitch_user.refresh_token = user_tokens["refresh_token"]
-		twitch_user.expires_in = user_tokens["expires_in"]
+	db_user = session.query(User).filter(User.twitch_id == user_data["twitch_id"]).first()
 	
-	session.commit()
-
-	jwt = create_jwt(twitch_user.id, twitch_user.twitch_id)
-
-	response = JSONResponse({
-		"display_name": user_response["display_name"],
-		"profile_image_url": user_response["profile_image_url"]
-		})
+	if not db_user:
+		raise HTTPException(status_code=401, detail="Usuário não encontrado")
 	
-	response.set_cookie(
-		key="auth_token",
-		value=jwt,
-		httponly=True,
-		secure=True,
-		samesite="none",
-		)
-
-	del sessions[session_token]
-
-	return response
+	return JSONResponse({
+        "display_name": db_user.display_name,
+        "profile_image_url": db_user.profile_image_url
+    })
 
 @auth_router.post("/logout")
-async def logout(response: Response):
-	response.delete_cookie(
-		key="session_token", 
-		httponly=True,
-		secure=True,
-		samesite="none",
-		)
-	response.delete_cookie(
-		key="auth_token", 
-		httponly=True,
-		secure=True,
-		samesite="none",
-		)
-	
+async def logout():
+
 	return {"msg": "ok"}
 
